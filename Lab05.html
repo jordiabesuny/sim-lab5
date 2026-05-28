@@ -1,0 +1,103 @@
+
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Split view</title>
+  <style>
+    :root { --gutter: 10px; --minPane: 180px; }
+    html, body { height: 100%; margin: 0; }
+    .split {
+      height: 100vh;
+      display: grid;
+      grid-template-columns: 50% var(--gutter) 50%;
+      overflow: hidden;
+      user-select: none;
+    }
+    .pane { overflow: hidden; }
+    iframe { width: 100%; height: 100%; border: 0; }
+
+    .divider {
+      cursor: col-resize;
+      background: #e5e7eb;
+      position: relative;
+      touch-action: none; /* importante para drag en móvil */
+    }
+    .divider::after{
+      content:"";
+      position:absolute;
+      left:50%;
+      top:0;
+      transform:translateX(-50%);
+      width:2px;
+      height:100%;
+      background:#9ca3af;
+      opacity:.8;
+    }
+
+    /* opcional: mientras arrastras, evitar selección y “flicker” */
+    .dragging { cursor: col-resize; }
+    .dragging iframe { pointer-events: none; } /* evita que el iframe “robe” el drag */
+  </style>
+</head>
+<body>
+  <div class="split" id="split">
+    <div class="pane"><iframe src="./snap.xml"></iframe></div>
+    <div class="divider" id="divider" aria-label="Separador"></div>
+    <div class="pane"><iframe src="https://insightmaker.com/insight/4s87Qd7lfkK7bqNfxD4EPC/Lab05-del-Lab03-Acoblat"></iframe></div>
+  </div>
+
+  <script>
+    const split = document.getElementById("split");
+    const divider = document.getElementById("divider");
+
+    const gutter = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--gutter")) || 10;
+    const minPane = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--minPane")) || 180;
+
+    let dragging = false;
+
+    function setColumns(clientX) {
+      const rect = split.getBoundingClientRect();
+      let x = clientX - rect.left;               // posición dentro del contenedor
+      const max = rect.width - minPane - gutter; // límite derecho
+      const min = minPane;                       // límite izquierdo
+
+      x = Math.max(min, Math.min(max, x));
+
+      const left = x;
+      const right = rect.width - left - gutter;
+
+      split.style.gridTemplateColumns = `${left}px ${gutter}px ${right}px`;
+    }
+
+    function onDown(e) {
+      dragging = true;
+      document.body.classList.add("dragging");
+      const clientX = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+      setColumns(clientX);
+      e.preventDefault();
+    }
+
+    function onMove(e) {
+      if (!dragging) return;
+      const clientX = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+      setColumns(clientX);
+      e.preventDefault();
+    }
+
+    function onUp() {
+      dragging = false;
+      document.body.classList.remove("dragging");
+    }
+
+    divider.addEventListener("mousedown", onDown);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+
+    divider.addEventListener("touchstart", onDown, { passive: false });
+    window.addEventListener("touchmove", onMove, { passive: false });
+    window.addEventListener("touchend", onUp);
+  </script>
+</body>
+</html>
